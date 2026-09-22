@@ -24,6 +24,7 @@ class ParticipantAgent:
         self.in_queue = in_queue
         self.out_queue = out_queue
         self.state = AgentState()
+        self._turn_buffer: list[str] = []
 
     async def setup(self) -> None:
         """Called once before run(), off the clock — model/client init
@@ -61,6 +62,8 @@ class ParticipantAgent:
         top-level extras (e.g. final_response's state_snapshot).
         """
         await self.out_queue.put({"action": action, "payload": payload or {}, **extra})
+        if action == "filler_speech":
+            self.state.record_filler()
 
     async def _call_tool(self, api_name: str, args: dict[str, Any]) -> str | None:
         """Registers and emits a tool_call, respecting the duplicate-write
@@ -77,11 +80,22 @@ class ParticipantAgent:
         self.state.manifest = event.get("payload", {}).get("tools")
 
     async def _on_user_speech_chunk(self, event: dict[str, Any]) -> None:
-        # TODO: buffer partial text; on end_of_turn, call slow_path to
-        # extract intent/slots, then route through tool_router.
-        filler = fast_path.make_filler(self.state)
+        payload = event.get("payload", {})
+        self._turn_buffer.append(payload.get("text", ""))
+        if not payload.get("end_of_turn"):
+            return
+
+        turn_text = "".join(self._turn_buffer)
+        self._turn_buffer = []
+
+        # Fast, rule-based ack — fires immediately at end_of_turn, well
+        # before slow_path's Gemini call (still TODO) could ever resolve.
+        filler = fast_path.make_filler(self.state, turn_text)
         if filler:
             await self._emit(filler["action"], filler["payload"])
+
+        # TODO: hand turn_text to slow_path for intent/slot extraction,
+        # then route through tool_router and self._call_tool.
 
     async def _on_user_audio_chunk(self, event: dict[str, Any]) -> None:
         # TODO: buffer audio; on end_of_turn, call slow_path.transcribe_and_extract_audio.
@@ -92,13 +106,24 @@ class ParticipantAgent:
         pass
 
     async def _on_interruption(self, event: dict[str, Any]) -> None:
-        """Cancel stale in-flight calls, bump plan_version, diff slots,
-        and emit an explicit cancel_tool for every cancelled call within
-        the 800ms grace period — never a silent discard.
+        """Acknowledge fast, cancel stale in-flight calls, bump
+        plan_version, diff slots, and emit an explicit cancel_tool for
+        every cancelled call within the 800ms grace period — never a
+        silent discard.
         """
+        text = event.get("payload", {}).get("text", "")
+        self._turn_buffer = []  # abandon whatever partial turn was in flight
+
+        filler = fast_path.make_filler(self.state, text)
+        if filler:
+            await self._emit(filler["action"], filler["payload"])
+
         self.state.bump_plan_version()
         for call_id in self.state.cancel_stale_calls():
             await self._emit("cancel_tool", {"call_id": call_id})
+
+        # TODO: re-extract intent/slots from `text` (via slow_path or a
+        # fast_path sniff) so the next state_snapshot reflects the change.
 
     async def _on_tool_result(self, event: dict[str, Any]) -> None:
         # TODO: mark the corresponding pending_call completed, fold result

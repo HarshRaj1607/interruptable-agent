@@ -39,6 +39,7 @@ class AgentState:
     plan_version: int = 0
     pending_calls: dict[str, PendingCall] = field(default_factory=dict)
     manifest: dict[str, Any] | None = None
+    fillers_sent: int = 0
 
     _call_id_counter: itertools.count = field(default_factory=itertools.count, repr=False)
 
@@ -78,6 +79,9 @@ class AgentState:
     def bump_plan_version(self) -> int:
         self.plan_version += 1
         return self.plan_version
+
+    def record_filler(self) -> None:
+        self.fillers_sent += 1
 
     def snapshot(self) -> dict[str, Any]:
         """state_snapshot attached to every final_response (and optionally

@@ -1,0 +1,14 @@
+# Filled in per the plan's testing & submission checklist (docs/Interruptible
+# Agents Hackathon — Implementation Plan.pdf, section 6).
+
+team_name: "TODO"
+entry_point: "agent.agent:ParticipantAgent"
+python_version: "3.11"
+
+requirements:
+  # Public PyPI only.
+  - google-genai
+
+env:
+  # Registered on the event portal as SECRET_* vars — do this early.
+  - SECRET_GEMINI_API_KEY

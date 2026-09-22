@@ -24,10 +24,10 @@ def make_filler(state: AgentState) -> dict[str, Any] | None:
 
 def make_clarification(missing_slot: str) -> dict[str, Any]:
     return {
-        "type": "clarification_request",
-        "text": f"Could you clarify the {missing_slot}?",
+        "action": "clarification_request",
+        "payload": {"text": f"Could you clarify the {missing_slot}?"},
     }
 
 
 def make_ack() -> dict[str, Any]:
-    return {"type": "filler_speech", "text": "One moment..."}
+    return {"action": "filler_speech", "payload": {"text": "One moment..."}}

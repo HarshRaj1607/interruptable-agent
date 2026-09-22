@@ -16,9 +16,22 @@ submission.yaml
 ```
 
 `harness/`, `scenarios/`, `run_local.py`, `eval_submission.py` are provided by the
-hackathon kit and are not yet in this repo — drop them in unchanged once available.
+hackathon kit and are **not yet in this repo** — dropping these in, unchanged, is the
+first task before any further logic-writing, since nobody can self-test locally without
+them.
+
+## Protocol notes (from kit review)
+
+- `ParticipantAgent(in_queue, out_queue)` — queues are constructor args, stored on
+  `self`; `run()` takes no arguments.
+- Every action emitted is `{"action": "<type>", "payload": {...}}`; `final_response`
+  additionally carries a top-level `state_snapshot`.
+- `tool_manifest` events carry the manifest at `event["payload"]["tools"]`.
+- `submission.yaml` uses `team` and `python`, not `team_name`/`python_version`.
 
 ## Status
 
-Module interfaces are scaffolded per the plan; logic bodies are `TODO`/`NotImplementedError`
-stubs. See the plan's section 5 (implementation checklist) for build order.
+Module interfaces are scaffolded per the plan and corrected against the kit's actual
+protocol (constructor/run signature, action envelope, manifest location); logic bodies
+are `TODO`/`NotImplementedError` stubs. See the plan's section 5 (implementation
+checklist) for build order.

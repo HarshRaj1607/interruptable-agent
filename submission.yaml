@@ -1,9 +1,9 @@
 # Filled in per the plan's testing & submission checklist (docs/Interruptible
 # Agents Hackathon — Implementation Plan.pdf, section 6).
 
-team_name: "TODO"
+team: "TODO"
 entry_point: "agent.agent:ParticipantAgent"
-python_version: "3.11"
+python: "3.11"
 
 requirements:
   # Public PyPI only.

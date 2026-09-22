@@ -80,12 +80,11 @@ class AgentState:
         return self.plan_version
 
     def snapshot(self) -> dict[str, Any]:
-        """state_snapshot payload attached to every final_response action."""
-        return {
-            "slots": dict(self.slots),
-            "intent": self.intent,
-            "plan_version": self.plan_version,
-        }
+        """state_snapshot attached to every final_response (and optionally
+        other actions). Convention used by all ground truth (docs/PROTOCOL.md
+        §2.5): exactly {"intent": <string>, "slots": {...}} — no extra keys.
+        """
+        return {"intent": self.intent, "slots": dict(self.slots)}
 
 
 def diff_slots(old: dict[str, Any], new: dict[str, Any]) -> dict[str, Any]:
